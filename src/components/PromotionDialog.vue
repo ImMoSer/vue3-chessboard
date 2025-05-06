@@ -1,11 +1,11 @@
 // src/components/PromotionDialog.vue
-<script setup lang="ts">
-import { computed } from 'vue';
+
+// --- Начало секции <script setup lang="ts">
+import { computed, type CSSProperties } from 'vue'; // <--- ДОБАВЛЕН ИМПОРТ CSSProperties
 import type {
-  PromotionDialogState, // Должен включать destSquare и orientation
-  PromotionPiece,       // Ваш существующий тип
-  // Убедитесь, что тип Promotion также доступен (обычно 'q' | 'n' | 'r' | 'b')
-} from '@/typings/Chessboard'; // Проверьте правильность пути к вашим типам
+  PromotionDialogState,
+  PromotionPiece,
+} from '@/typings/Chessboard';
 
 const props = defineProps<{
   state: PromotionDialogState;
@@ -15,7 +15,6 @@ const emit = defineEmits<{
   (e: 'promotionSelected'): void;
 }>();
 
-// Можно изменить порядок для вертикального списка, если хотите Ферзя первым
 const promotionPieces: PromotionPiece[] = [
   { name: 'Queen', data: 'q' },
   { name: 'Rook', data: 'r' },
@@ -25,50 +24,47 @@ const promotionPieces: PromotionPiece[] = [
 
 function promotionSelected(piece: PromotionPiece): void {
   props.state.callback?.(piece.data);
-  emit('promotionSelected'); // Это событие используется для закрытия диалога
+  emit('promotionSelected');
 }
 
-const dialogStyle = computed(() => {
+// --- ИЗМЕНЕНО ВЫЧИСЛЯЕМОЕ СВОЙСТВО: добавлен тип CSSProperties ---
+const dialogStyle = computed((): CSSProperties => { // <--- УКАЗАН ВОЗВРАЩАЕМЫЙ ТИП
   if (!props.state || !props.state.isEnabled || !props.state.destSquare || !props.state.orientation) {
-    // Если каких-то критичных данных нет, диалог не будет показан (благодаря v-if)
-    // или можно вернуть базовые стили, чтобы он не ломал верстку, если v-if убрать
-    return { display: 'none' };
+    return { display: 'none' }; // Это валидный CSSProperties
   }
 
-  const squareWidthPercent = 12.5; // 100% / 8 клеток
-
-  // Преобразуем букву вертикали (file) из 'a'...'h' в индекс 0...7
+  const squareWidthPercent = 12.5;
   let fileIndex = props.state.destSquare.file.charCodeAt(0) - 'a'.charCodeAt(0);
-
-  // Корректируем индекс, если доска перевернута
   if (props.state.orientation === 'black') {
     fileIndex = 7 - fileIndex;
   }
-
   const calculatedLeftPercent = fileIndex * squareWidthPercent;
 
-  // Возвращаем объект стилей
-  // Стили из CSS класса .promotion-dialog будут применены как базовые,
-  // а эти инлайн-стили их дополнят или переопределят.
+  // Этот объект теперь будет корректно типизирован для :style
   return {
-    // Динамически вычисляемые стили для позиционирования и размера:
-    position: 'absolute', // Это уже есть в вашем CSS для .promotion-dialog
+    position: 'absolute', // TypeScript теперь знает, что 'absolute' - это допустимое значение
     top: '0%',
     left: `${calculatedLeftPercent}%`,
     width: `${squareWidthPercent}%`,
     height: '50%', // Как в ваших последних стилях
-    // Стили, которые можно оставить в CSS или перенести сюда для полного контроля:
-    // padding: '0.4rem',
-    // zIndex: 999,
-    // minHeight: '45px',
-    // display: 'flex', // Уже есть в CSS для .promotion-dialog
-    // backgroundColor: '#f0d9b5', // Уже есть в CSS для .promotion-dialog
-    // border: '1px solid #333', // Уже есть в CSS для .promotion-dialog
-    // borderRadius: '1rem', // Уже есть в CSS для .promotion-dialog
-    // flexDirection: 'column', // Уже есть в CSS для .promotion-dialog
-    // boxSizing: 'border-box', // Уже есть в CSS для .promotion-dialog
+
+    // Статические стили лучше оставить в CSS-классе .promotion-dialog,
+    // чтобы этот объект был чище и содержал только динамику.
+    // Но если они здесь, они также будут применены.
+    // Например, если вы их переносили из CSS:
+    padding: '0.4rem',
+    zIndex: 999,
+    minHeight: '45px',
+    display: 'flex', // Уже должен быть в CSS для .promotion-dialog
+    backgroundColor: '#f0d9b5',
+    border: '1px solid #333',
+    borderRadius: '1rem',
+    flexDirection: 'column', // Уже должен быть в CSS для .promotion-dialog
+    boxSizing: 'border-box',
   };
 });
+// --- КОНЕЦ ВЫЧИСЛЯЕМОГО СВОЙСТВА ---
+
 </script>
 
 <template>
