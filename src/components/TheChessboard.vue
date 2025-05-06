@@ -420,9 +420,8 @@ cg-board .king.black {
 
 @media (orientation: landscape) {
   .main-wrap {
-    width: 90vh;
+    width: 100vh;
     margin-inline: auto;
-    max-width: 700px;
   }
 }
 </style>

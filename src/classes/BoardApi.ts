@@ -24,6 +24,7 @@ import type {
   Promotion,
   Props,
   SquareColor,
+  PromotionDialogState,
 } from '@/typings/Chessboard';
 import {
   Chess,
@@ -34,8 +35,12 @@ import {
 } from 'chess.js';
 import type { Api } from 'chessground/api';
 import { Chessground } from 'chessground/chessground';
-import type { Color, Key, MoveMetadata, Role } from 'chessground/types';
+import type { Color, Key, MoveMetadata, Role, File, Rank  } from 'chessground/types';
 import { nextTick } from 'vue';
+
+
+
+// ...
 
 /**
  * class for modifying and reading data from the board
@@ -140,17 +145,36 @@ export class BoardApi {
   private async changeTurn(
     orig: Key,
     dest: Key,
-    _: MoveMetadata
+    metadata: MoveMetadata // Убедитесь, что тип MoveMetadata импортирован или определен
   ): Promise<void> {
     let selectedPromotion: Promotion | undefined = undefined;
-    if (isPromotion(dest, this.game.get(orig as Square))) {
+    const pieceToMove = this.game.get(orig as Square);
+
+    console.log('[BoardApi] changeTurn: START. Move from', orig, 'to', dest, '. Piece:', pieceToMove);
+
+    if (pieceToMove && isPromotion(dest, pieceToMove)) {
+      console.log(`[BoardApi] changeTurn: Promotion detected at ${dest}.`);
+
       selectedPromotion = await new Promise((resolve) => {
-        this.boardState.promotionDialogState = {
+        // Формируем состояние для PromotionDialog
+        const currentOrientation = this.board.state.orientation; // <--- ИЗМЕНЕНИЕ ЗДЕСЬ
+
+        const promotionState: PromotionDialogState = {
           isEnabled: true,
           color: this.getTurnColor(),
           callback: resolve,
+          destSquare: { file: dest[0] as File, rank: dest[1] as Rank },
+          orientation: currentOrientation,
+          // boardRect: this.boardElement.getBoundingClientRect(), // Пока не передаем
         };
+
+        const loggablePromotionState = { ...promotionState, callback: 'function_placeholder' };
+        console.log('[BoardApi] changeTurn: Setting promotionDialogState:', JSON.parse(JSON.stringify(loggablePromotionState)));
+
+        this.boardState.promotionDialogState = promotionState;
       });
+
+      console.log(`[BoardApi] changeTurn: Promotion choice received: ${selectedPromotion}`);
     }
 
     this.move({
@@ -158,6 +182,7 @@ export class BoardApi {
       to: dest,
       promotion: selectedPromotion,
     });
+    console.log('[BoardApi] changeTurn: END. Called this.move().');
   }
 
   //
